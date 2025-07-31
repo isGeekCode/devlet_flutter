@@ -36,37 +36,33 @@ class _WebViewWithTabsState extends State<WebViewWithTabs> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_currentIndex == 0 ? 'Devlet: Flutter' : '설정')),
-      body: InAppWebView(
-        initialUrlRequest: URLRequest(
-          url: WebUri(_tabs[_currentIndex]),
-        ),
-        onWebViewCreated: (controller) {
-          _webViewController = controller;
-        },
-        shouldOverrideUrlLoading: (controller, navigationAction) async {
-          final uri = navigationAction.request.url;
-          if (uri != null && uri.scheme == 'app') {
-            if (uri.host == 'home') {
-              setState(() {
-                _currentIndex = 0;
-              });
-              _webViewController.loadUrl(
-                urlRequest: URLRequest(url: WebUri(_tabs[0])),
-              );
-            } else if (uri.host == 'settings') {
-              setState(() {
-                _currentIndex = 1;
-              });
-              _webViewController.loadUrl(
-                urlRequest: URLRequest(url: WebUri(_tabs[1])),
-              );
-            }
-            return NavigationActionPolicy.CANCEL;
-          }
-          return NavigationActionPolicy.ALLOW;
-        },
-      ),
+      body: _currentIndex == 0
+          ? InAppWebView(
+              initialUrlRequest: URLRequest(
+                url: WebUri(_tabs[_currentIndex]),
+              ),
+              onWebViewCreated: (controller) {
+                _webViewController = controller;
+              },
+              shouldOverrideUrlLoading: (controller, navigationAction) async {
+                final uri = navigationAction.request.url;
+                if (uri != null) {
+                  if (uri.scheme == 'app') {
+                    if (uri.host == 'home') {
+                      setState(() {
+                        _currentIndex = 0;
+                      });
+                      _webViewController.loadUrl(
+                        urlRequest: URLRequest(url: WebUri(_tabs[0])),
+                      );
+                    }
+                    return NavigationActionPolicy.CANCEL;
+                  }
+                }
+                return NavigationActionPolicy.ALLOW;
+              },
+            )
+          : const SettingsPage(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         items: const [
@@ -82,11 +78,42 @@ class _WebViewWithTabsState extends State<WebViewWithTabs> {
         onTap: (index) {
           setState(() {
             _currentIndex = index;
-            _webViewController.loadUrl(
-              urlRequest: URLRequest(url: WebUri(_tabs[index])),
-            );
+            if (_currentIndex == 0) {
+              _webViewController.loadUrl(
+                urlRequest: URLRequest(url: WebUri(_tabs[0])),
+              );
+            }
+            // No need to load URL for settings; handled by native widget.
           });
         },
+      ),
+    );
+  }
+
+  void _openSubWebView(String url) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(title: const Text("SubView")),
+          body: InAppWebView(
+            initialUrlRequest: URLRequest(
+              url: WebUri(url),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: const Center(
+        child: Text('여기는 네이티브 설정 페이지입니다'),
       ),
     );
   }
